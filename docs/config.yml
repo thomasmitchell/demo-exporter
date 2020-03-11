@@ -1,0 +1,37 @@
+namespace: demo
+
+global_properties:
+- type: counter
+  properties:
+    interval: 15s
+    jitter: 0
+    avg: 5
+
+metrics:
+- name: goes_up
+  type: counter
+  # base_properties can override specific properties of this metric over the
+  # global properties for this metric type
+  base_properties:
+    interval: 1m
+    increase_avg: 10
+    increase_jitter: 5
+
+- name: gauge_stuff
+  type: gauge
+  base_properties:
+    interval: 30s
+    jitter: 5
+  modes:
+  # mode overrides can override specific properties for this
+  # metric while the exporter is in the given mode
+  - name: happy
+    properties:
+      avg: 10
+  - name: sad
+    properties:
+      avg: 500
+
+modes:
+- name: happy
+- name: sad
