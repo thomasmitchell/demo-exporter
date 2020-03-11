@@ -1,21 +1,38 @@
-package main
+package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 const (
+	//MetricTypeCounter denotes a Prometheus Counter Metric
 	MetricTypeCounter MetricType = iota
+	//MetricTypeGauge denotes a Prometheus Gauge Metric
 	MetricTypeGauge
 )
 
 type Config struct {
-	Namespace        string           `yaml:"namespace"`
-	GlobalProperties GlobalProperties `yaml:"global_properties"`
-	Metrics          []Metric         `yaml:"metrics"`
-	Modes            []ModeDefinition `yaml:"modes"`
+	Namespace        string             `yaml:"namespace"`
+	GlobalProperties []GlobalProperties `yaml:"global_properties"`
+	Metrics          []Metric           `yaml:"metrics"`
+	Modes            []ModeDefinition   `yaml:"modes"`
+}
+
+func Load(filename string) (*Config, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlDecoder := yaml.NewDecoder(file)
+	ret := &Config{}
+	err = yamlDecoder.Decode(ret)
+	return ret, err
 }
 
 type MetricType int
@@ -49,16 +66,15 @@ type Metric struct {
 
 type MetricProperties struct {
 	//Both
-	// How often it goes up for counter
-	// How often it jitters for gauge
+	// Interval defines how often it goes up for counter and
+	// how often it jitters for gauge
 	Interval time.Duration `yaml:"interval"`
 
-	//ForCounter
+	//For Counter
 	IncreaseAvg    int `yaml:"increase_avg"`
 	IncreaseJitter int `yaml:"increase_jitter"`
 
-	//ForGauge
-
+	//For Gauge
 	Avg    int `yaml:"avg"`
 	Jitter int `yaml:"jitter"`
 }
