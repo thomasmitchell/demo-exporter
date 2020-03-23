@@ -1,10 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
 
 	"github.com/thomasmitchell/demo-exporter/config"
+	"github.com/thomasmitchell/demo-exporter/exporter"
+	"github.com/thomasmitchell/demo-exporter/server"
 
 	"github.com/jhunt/go-ansi"
 	"github.com/jhunt/go-cli"
@@ -28,8 +29,22 @@ func main() {
 		bailWith("%s", err.Error())
 	}
 
-	//TODO: Replace
-	err = json.NewEncoder(os.Stdout).Encode(cfg)
+	exp := exporter.New(cfg.Prometheus.Namespace)
+	for _, metric := range cfg.Prometheus.Metrics {
+		err = exp.AddMetric(metric)
+		if err != nil {
+			bailWith("%s", err.Error())
+		}
+	}
+
+	exp.StartScheduler()
+
+	srv, err := server.New(cfg.Server)
+	if err != nil {
+		bailWith("%s", err)
+	}
+
+	err = srv.Listen()
 	if err != nil {
 		bailWith("%s", err)
 	}

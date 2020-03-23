@@ -1,37 +1,59 @@
-namespace: demo
+server:
+  port: 9015
 
-global_properties:
-- type: counter
+prometheus:
+  namespace: demo
+
   properties:
-    interval: 15s
-    jitter: 0
-    avg: 5
-
-metrics:
-- name: goes_up
-  type: counter
-  # base_properties can override specific properties of this metric over the
-  # global properties for this metric type
-  base_properties:
-    interval: 1m
-    increase_avg: 10
-    increase_jitter: 5
-
-- name: gauge_stuff
-  type: gauge
-  base_properties:
-    interval: 30s
-    jitter: 5
-  modes:
-  # mode overrides can override specific properties for this
-  # metric while the exporter is in the given mode
-  - name: happy
+  - type: counter
     properties:
+      interval: 15s
+      jitter: 0
+      avg: 5
+
+  metrics:
+  - name: goes_up
+    type: counter
+    # properties can override specific properties of this metric over the
+    # global properties for this metric type
+    description: "This is a value that goes up."
+    properties:
+      interval: 1m
       avg: 10
-  - name: sad
-    properties:
-      avg: 500
+      jitter: 5
+    instances:
+    - labels: 
+        deployment: their_lab
 
-modes:
-- name: happy
-- name: sad
+  - name: gauge_stuff
+    type: gauge
+    properties:
+      interval: 30s
+      jitter: 5
+    modes:
+    # mode overrides can override specific properties for this
+    # metric while the exporter is in the given mode
+    - name: happy
+      properties:
+        avg: 10
+    - name: sad
+      properties:
+        avg: 500
+    instances:
+    - labels:
+        deployment: my_lab
+      properties:
+        avg: 200
+      modes:
+      - name: happy
+        properties:
+          avg: 100
+      - name: sad
+        properties:
+          avg: 1000
+    - labels:
+        deployment: their_lab
+
+  modes:
+  - name: happy
+  - name: sad
