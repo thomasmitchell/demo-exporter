@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thomasmitchell/demo-exporter/config"
 	"github.com/thomasmitchell/demo-exporter/exporter"
 	"github.com/thomasmitchell/demo-exporter/server"
@@ -29,7 +30,9 @@ func main() {
 		bailWith("%s", err.Error())
 	}
 
-	exp := exporter.New(cfg.Prometheus.Namespace)
+	promReg := prometheus.NewRegistry()
+
+	exp := exporter.New(cfg.Prometheus.Namespace, promReg)
 	for _, metric := range cfg.Prometheus.Metrics {
 		err = exp.AddMetric(metric)
 		if err != nil {
@@ -39,7 +42,7 @@ func main() {
 
 	exp.StartScheduler()
 
-	srv, err := server.New(cfg.Server)
+	srv, err := server.New(cfg.Server, promReg)
 	if err != nil {
 		bailWith("%s", err)
 	}

@@ -10,6 +10,7 @@ import (
 
 type Exporter struct {
 	namespace string
+	reg       *prometheus.Registry
 	sched     scheduler
 }
 
@@ -22,8 +23,8 @@ type timeGroup struct {
 	metrics []Metric
 }
 
-func New(namespace string) *Exporter {
-	return &Exporter{namespace: namespace}
+func New(namespace string, reg *prometheus.Registry) *Exporter {
+	return &Exporter{namespace: namespace, reg: reg}
 }
 
 func (e *Exporter) AddMetric(metric config.Metric) error {
@@ -64,7 +65,7 @@ func (e *Exporter) AddMetric(metric config.Metric) error {
 		e.getTimeGroup(metric.Properties.Interval).add(metricToAdd)
 	}
 
-	err := prometheus.Register(col)
+	err := e.reg.Register(col)
 	if err != nil {
 		return err
 	}
