@@ -58,3 +58,28 @@ func (m *GaugeMetric) UpdateMetric() {
 	newValue := m.avg + jitter
 	m.metric.Set(float64(newValue))
 }
+
+type MetricModeSet struct {
+	//slot 0 is treated as a default
+	modes []Metric
+}
+
+func (m *MetricModeSet) AddMetric(mode int, metric Metric) {
+	for len(m.modes) <= mode {
+		m.modes = append(m.modes, nil)
+	}
+
+	m.modes[mode] = metric
+}
+
+func (m *MetricModeSet) UpdateMetric(mode int) {
+	metric := m.modes[mode]
+	if metric == nil {
+		metric = m.modes[0]
+		if metric == nil {
+			return
+		}
+	}
+
+	metric.UpdateMetric()
+}

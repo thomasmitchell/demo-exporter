@@ -83,17 +83,46 @@ type Metric struct {
 	Name          string                 `yaml:"name"`
 	Description   string                 `yaml:"description"`
 	Type          MetricType             `yaml:"type"` //actually a string in config
+	Interval      time.Duration          `yaml:"interval"`
 	Properties    MetricProperties       `yaml:"-"`
 	RawProperties map[string]interface{} `yaml:"properties"`
 	Modes         []MetricMode           `yaml:"modes"`
 	Instances     []MetricInstance       `yaml:"instances"`
 }
 
+type rawMetric struct {
+	Name          string                 `yaml:"name"`
+	Description   string                 `yaml:"description"`
+	Type          MetricType             `yaml:"type"` //actually a string in config
+	Interval      int                    `yaml:"interval"`
+	Properties    MetricProperties       `yaml:"-"`
+	RawProperties map[string]interface{} `yaml:"properties"`
+	Modes         []MetricMode           `yaml:"modes"`
+	Instances     []MetricInstance       `yaml:"instances"`
+}
+
+func (m *Metric) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	raw := rawMetric{}
+	err := unmarshal(&raw)
+	if err != nil {
+		return err
+	}
+
+	*m = Metric{
+		Name:          raw.Name,
+		Description:   raw.Description,
+		Type:          raw.Type,
+		Interval:      time.Duration(raw.Interval) * time.Second,
+		Properties:    raw.Properties,
+		RawProperties: raw.RawProperties,
+		Modes:         raw.Modes,
+		Instances:     raw.Instances,
+	}
+
+	return nil
+}
+
 type MetricProperties struct {
-	//Both
-	// Interval defines how often it goes up for counter and
-	// how often it jitters for gauge
-	Interval time.Duration `yaml:"interval"`
 	// For Counter, this defines how much the average increase is
 	// For Gauge, this defines the average value
 	Avg    int `yaml:"avg"`
@@ -106,7 +135,6 @@ type ModeDefinition struct {
 
 type MetricMode struct {
 	Name          string                 `yaml:"name"`
-	Disable       bool                   `yaml:"disable"`
 	Properties    MetricProperties       `yaml:"-"`
 	RawProperties map[string]interface{} `yaml:"properties"`
 }
@@ -156,15 +184,6 @@ func (c *Config) mergeProperties() {
 
 func (c *Config) mapToMetricProperties(raw map[string]interface{}) (MetricProperties, error) {
 	ret := MetricProperties{}
-	if value, found := raw["interval"]; found {
-		valueInt, isInt := value.(int)
-		if !isInt {
-			return ret, fmt.Errorf("interval must be type int")
-		}
-
-		ret.Interval = time.Duration(valueInt) * time.Second
-	}
-
 	if value, found := raw["avg"]; found {
 		valueInt, isInt := value.(int)
 		if !isInt {

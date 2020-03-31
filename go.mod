@@ -11,6 +11,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/procfs v0.0.10 // indirect
 	golang.org/x/sys v0.0.0-20200317113312-5766fd39f98d // indirect
 	gopkg.in/yaml.v2 v2.2.8

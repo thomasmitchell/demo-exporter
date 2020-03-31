@@ -6,8 +6,8 @@ prometheus:
 
   properties:
   - type: counter
+    interval: 15
     properties:
-      interval: 15
       jitter: 0
       avg: 5
 
@@ -17,8 +17,8 @@ prometheus:
     # properties can override specific properties of this metric over the
     # global properties for this metric type
     description: "This is a value that goes up."
+    interval: 60
     properties:
-      interval: 60
       avg: 10
       jitter: 5
     instances:
@@ -27,8 +27,8 @@ prometheus:
 
   - name: gauge_stuff
     type: gauge
+    interval: 30
     properties:
-      interval: 30
       jitter: 5
     modes:
     # mode overrides can override specific properties for this

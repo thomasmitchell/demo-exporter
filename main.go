@@ -32,7 +32,12 @@ func main() {
 
 	promReg := prometheus.NewRegistry()
 
-	exp := exporter.New(cfg.Prometheus.Namespace, promReg)
+	modeNames := []string{}
+	for _, mode := range cfg.Prometheus.Modes {
+		modeNames = append(modeNames, mode.Name)
+	}
+
+	exp := exporter.New(cfg.Prometheus.Namespace, modeNames, promReg)
 	for _, metric := range cfg.Prometheus.Metrics {
 		err = exp.AddMetric(metric)
 		if err != nil {
