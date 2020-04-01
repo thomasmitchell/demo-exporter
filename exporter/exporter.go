@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,7 +20,9 @@ type Exporter struct {
 }
 
 type scheduler struct {
-	groups []timeGroup
+	lock        sync.RWMutex
+	groups      []timeGroup
+	currentMode int
 }
 
 type timeGroup struct {
@@ -133,6 +136,34 @@ func (e *Exporter) Gather() ([]*dto.MetricFamily, error) {
 	return e.reg.Gather()
 }
 
+//Second return value is true if the current mode is the default
+func (e *Exporter) GetMode() (string, bool) {
+	modeInt := e.sched.getMode()
+	if modeInt == 0 {
+		return "default", true
+	}
+
+	for modeName, modeNum := range e.modes {
+		if modeNum == modeInt {
+			return modeName, false
+		}
+	}
+
+	panic("Unknown mode found")
+}
+
+func (e *Exporter) SetMode(mode string) error {
+	modeInt, err := e.modeNum(mode)
+	if err != nil {
+		return err
+	}
+
+	e.sched.lock.Lock()
+	e.sched.currentMode = modeInt
+	e.sched.lock.Unlock()
+	return nil
+}
+
 func (e *Exporter) getTimeGroup(t time.Duration) *timeGroup {
 	for _, group := range e.sched.groups {
 		if group.every == t {
@@ -178,10 +209,9 @@ func (e *Exporter) getAllLabels(metric config.Metric) labelList {
 }
 
 func (t *timeGroup) add(m MetricModeSet) { t.metrics = append(t.metrics, m) }
-func (t *timeGroup) performUpdates() {
+func (t *timeGroup) performUpdates(mode int) {
 	for i := range t.metrics {
-		//TODO: Fix this
-		t.metrics[i].UpdateMetric(DefaultMode)
+		t.metrics[i].UpdateMetric(mode)
 	}
 }
 
@@ -190,10 +220,16 @@ func (s *scheduler) start() {
 	// goroutines for each group for now
 	for _, group := range s.groups {
 		go func(g timeGroup) {
-			g.performUpdates()
+			g.performUpdates(s.getMode())
 			for range time.Tick(g.every) {
-				g.performUpdates()
+				g.performUpdates(s.getMode())
 			}
 		}(group)
 	}
+}
+
+func (s *scheduler) getMode() int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.currentMode
 }

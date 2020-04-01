@@ -10,6 +10,9 @@ prometheus:
     properties:
       jitter: 0
       avg: 5
+  - type: gauge
+    properties:
+      jitter: 5
 
   metrics:
   - name: goes_up

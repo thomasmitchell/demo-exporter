@@ -37,6 +37,9 @@ func Load(filename string) (*Config, error) {
 	yamlDecoder := yaml.NewDecoder(file)
 	ret := &Config{}
 	err = yamlDecoder.Decode(ret)
+	if err != nil {
+		return nil, err
+	}
 
 	ret.mergeProperties()
 	err = ret.convertAllRawProperties()

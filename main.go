@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,18 +26,22 @@ func main() {
 		bailWith("%s", err.Error())
 	}
 
+	fmt.Printf("Loading config at `%s'\n", cmd.Config)
 	cfg, err := config.Load(cmd.Config)
 	if err != nil {
 		bailWith("%s", err.Error())
 	}
 
+	fmt.Printf("Creating new Prometheus registry\n")
 	promReg := prometheus.NewRegistry()
 
+	fmt.Printf("Parsing configured modes\n")
 	modeNames := []string{}
 	for _, mode := range cfg.Prometheus.Modes {
 		modeNames = append(modeNames, mode.Name)
 	}
 
+	fmt.Printf("Initializing exporter logic\n")
 	exp := exporter.New(cfg.Prometheus.Namespace, modeNames, promReg)
 	for _, metric := range cfg.Prometheus.Metrics {
 		err = exp.AddMetric(metric)
@@ -45,13 +50,16 @@ func main() {
 		}
 	}
 
+	fmt.Printf("Starting scheduler\n")
 	exp.StartScheduler()
 
-	srv, err := server.New(cfg.Server, promReg)
+	fmt.Printf("Initializing server logic\n")
+	srv, err := server.New(cfg.Server, exp)
 	if err != nil {
 		bailWith("%s", err)
 	}
 
+	fmt.Printf("Starting server\n")
 	err = srv.Listen()
 	if err != nil {
 		bailWith("%s", err)

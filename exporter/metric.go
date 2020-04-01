@@ -73,7 +73,10 @@ func (m *MetricModeSet) AddMetric(mode int, metric Metric) {
 }
 
 func (m *MetricModeSet) UpdateMetric(mode int) {
-	metric := m.modes[mode]
+	var metric Metric
+	if len(m.modes) > mode {
+		metric = m.modes[mode]
+	}
 	if metric == nil {
 		metric = m.modes[0]
 		if metric == nil {
